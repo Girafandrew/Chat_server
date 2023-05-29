@@ -5,31 +5,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background-color: #000;
-      color: #00FF00;
-      overflow: hidden;
-      font-family: "Courier New", monospace;
-    }
-
-    #chat {
-      width: 400px;
-      height: 400px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 20px;
-      background-color: rgba(0, 0, 0, 0.8);
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-    }
-
     .message {
       margin-bottom: 10px;
     }
@@ -42,38 +17,6 @@
       font-size: 12px;
       color: #888;
     }
-
-    #matrix-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-    }
-
-    .matrix-letter {
-      position: absolute;
-      display: block;
-      color: #00FF00;
-      font-size: 16px;
-      line-height: 20px;
-      width: 10px;
-      height: 10px;
-      pointer-events: none;
-      animation: matrix-fall 10s linear infinite;
-    }
-
-    @keyframes matrix-fall {
-      0% {
-        opacity: 0;
-        transform: translateY(-100px) rotateX(0);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(100vh) rotateX(720deg);
-      }
-    }
   </style>
 </head>
 <body>
@@ -83,8 +26,6 @@
     <button id="sendButton">Enviar</button>
   </div>
 
-  <canvas id="matrix-background"></canvas>
-
   <script>
     // Conexão com o servidor SocketIO
     var socket = io.connect();
@@ -92,18 +33,58 @@
     // Evento para quando o cliente se conecta
     socket.on('connect', function() {
       var username = prompt('Digite seu nome de usuário:');
-      socket.emit('message', { username: username }); // Envia o nome de usuário para o servidor
+      socket.emit('user_connected', { username: username }); // Envia o nome de usuário para o servidor
     });
 
     // Evento para quando o servidor envia uma mensagem
     socket.on('message', function(data) {
       var message = $('<li class="message">');
-      var username = $('<span class="username">').text(data.username);
+      var usernameElement = $('<span class="username">').text(data.username);
       var content = $('<span>').text(': ' + data.message);
       var time = $('<span class="time">').text(getCurrentTime());
 
-      message.append(username, content, time);
+      message.append(usernameElement, content, time);
       $('#messages').append(message);
     });
 
-    // Evento para quando o servidor inform
+    // Evento para quando o servidor informa que um usuário se conectou
+    socket.on('user_connected', function(data) {
+      $('#messages').append($('<li>').text(data.username + ' entrou no chat'));
+    });
+
+    // Evento para quando o servidor informa que um usuário se desconectou
+    socket.on('user_disconnected', function(data) {
+      $('#messages').append($('<li>').text(data.username + ' saiu do chat'));
+    });
+
+    // Envia a mensagem digitada para o servidor
+    $('#sendButton').click(function() {
+      var message = $('#inputMessage').val();
+      socket.emit('message', { username: getUsername(), message: message }); // Inclui o nome de usuário ao enviar a mensagem
+      $('#inputMessage').val('');
+    });
+
+    // Envia a mensagem ao pressionar Enter
+    $('#inputMessage').keypress(function(e) {
+      if (e.which === 13) {
+        var message = $('#inputMessage').val();
+        socket.emit('message', { username: getUsername(), message: message }); // Inclui o nome de usuário ao enviar a mensagem
+        $('#inputMessage').val('');
+      }
+    });
+
+    // Função auxiliar para obter a hora atual no formato HH:MM
+    function getCurrentTime() {
+      var now = new Date();
+      var hours = now.getHours().toString().padStart(2, '0');
+      var minutes = now.getMinutes().toString().padStart(2, '0');
+      return hours + ':' + minutes;
+    }
+
+    // Função auxiliar para obter o nome de usuário
+    function getUsername() {
+      return prompt('Digite seu nome de usuário:');
+    }
+  </script>
+</body>
+</html>
