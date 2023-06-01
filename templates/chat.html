@@ -32,39 +32,37 @@
                 });
             }
 
-            // Evento para lidar com o envio do formulário de usuário
-            $('#userForm').submit(function(e) {
-                e.preventDefault();
-                var username = $('#username').val();
-                $.ajax({
-                    url: '/',
-                    type: 'POST',
-                    data: { username: username },
-                    success: function() {
-                        $('#userForm').hide();
-                        $('#chatForm').show();
-                    }
-                });
-            });
-
-            // Evento para lidar com o envio do formulário de mensagem
+            // Evento para lidar com o envio do formulário
             $('#chatForm').submit(function(e) {
                 e.preventDefault();
                 sendMessage();
             });
+
+            // Função para obter as mensagens atualizadas do servidor
+            function getMessages() {
+                $.ajax({
+                    url: '/get_messages',
+                    type: 'GET',
+                    success: function(data) {
+                        data.forEach(function(message) {
+                            updateMessages(message);
+                        });
+                    }
+                });
+            }
+
+            // Obtém as mensagens quando a página carrega
+            getMessages();
         });
     </script>
 </head>
 <body>
     <h1>Chat</h1>
+    <h2>Welcome, {{ username }}!</h2>
     <div id="messages">
         <!-- As mensagens serão exibidas aqui -->
     </div>
-    <form id="userForm">
-        <input type="text" id="username" placeholder="Username" required>
-        <input type="submit" value="Enter">
-    </form>
-    <form id="chatForm" style="display: none;">
+    <form id="chatForm">
         <input type="text" id="message" placeholder="Message" required>
         <input type="submit" value="Send">
     </form>
