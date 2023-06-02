@@ -1,40 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chat - Login</title>
-    <style>
-        body {
-            text-align: center;
-            padding-top: 200px;
-            font-family: Arial, sans-serif;
-        }
-
-        h1 {
-            font-size: 32px;
-            margin-bottom: 20px;
-        }
-
-        input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-        }
-
-        input[type="submit"] {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-    </style>
+    <title>Chat App</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="main.js"></script>
 </head>
 <body>
-    <h1>Chat - Login</h1>
-    <form action="http://girafandrew.pythonanywhere.com/" method="POST">
-        <input type="text" name="username" placeholder="Enter your username" required>
-        <br><br>
-        <input type="submit" value="Enter Chat">
-    </form>
+    <h1>Chat App</h1>
+    <div id="chat">
+        <div id="messages"></div>
+        <form id="message-form">
+            <input type="text" id="input-message" placeholder="Digite sua mensagem...">
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+    <script>
+        const socket = io(); // Connect to the WebSocket server
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('input-message');
+        const messagesContainer = document.getElementById('messages');
+
+        messageForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const message = messageInput.value;
+            if (message.trim() !== '') {
+                socket.emit('message', { message: message });
+                messageInput.value = '';
+            }
+        });
+
+        socket.on('message', function(data) {
+            const { username, message, timestamp } = data;
+            const formattedTimestamp = new Date(timestamp).toLocaleString();
+            const messageElement = document.createElement('div');
+            messageElement.innerHTML = `<strong>${username} (${formattedTimestamp}):</strong> ${message}`;
+            messagesContainer.appendChild(messageElement);
+        });
+    </script>
 </body>
 </html>
