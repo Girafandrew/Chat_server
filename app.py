@@ -1,47 +1,33 @@
-from flask import Flask, render_template, request, jsonify, make_response
-from flask_socketio import SocketIO
-from datetime import datetime
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SECRET_KEY'] = 'secretkey'
 socketio = SocketIO(app)
 
-# Lista para armazenar as mensagens do chat
+# Lista para armazenar as mensagens
 messages = []
 
-# Rota inicial do chat
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
-    if request.method == 'POST':
-        username = request.form['username']
-        resp = make_response(render_template('chat.html', username=username))
-        resp.set_cookie('username', username)
-        return resp
-    username = request.cookies.get('username')
-    if not username:
-        return render_template('index.html')
+    return render_template('index.html')
+
+@app.route('/chat')
+def chat():
+    username = request.args.get('username')
     return render_template('chat.html', username=username)
 
-# Rota para receber as mensagens do formulário e adicioná-las à lista de mensagens
-@app.route('/send_message', methods=['POST'])
-def send_message():
-    message = request.form['message']
-    username = request.cookies.get('username')
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    formatted_message = f"{now} - {username}: {message}"
-    messages.append(formatted_message)
-    socketio.emit('new_message', formatted_message)
-    return ''
+@socketio.on('send_message')
+def handle_send_message_event(data):
+    messages.append(data)
+    emit('receive_message', data, broadcast=True)
 
-# Rota para obter as mensagens atualizadas em formato JSON
-@app.route('/get_messages', methods=['GET'])
-def get_messages():
-    return jsonify(messages)
+@socketio.on('connect')
+def handle_connect_event():
+    emit('load_messages', messages)
 
-# Função para iniciar o servidor web
 def start_server():
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0', port=9000)
 
-# Inicia o servidor web
 if __name__ == '__main__':
     start_server()

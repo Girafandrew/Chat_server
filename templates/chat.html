@@ -7,7 +7,7 @@
     <script>
         $(document).ready(function() {
             // Conecta-se ao servidor de socket
-            var socket = io.connect('http://localhost:5000');
+            var socket = io.connect('http://girafandrew.pythonanywhere.com/');
 
             // Função para atualizar as mensagens na página
             function updateMessages(data) {
@@ -23,7 +23,7 @@
             function sendMessage() {
                 var message = $('#message').val();
                 $.ajax({
-                    url: '/send_message',
+                    url: 'http://girafandrew.pythonanywhere.com/send_message',
                     type: 'POST',
                     data: { message: message },
                     success: function() {
@@ -41,7 +41,7 @@
             // Função para obter as mensagens atualizadas do servidor
             function getMessages() {
                 $.ajax({
-                    url: '/get_messages',
+                    url: 'http://girafandrew.pythonanywhere.com/get_messages',
                     type: 'GET',
                     success: function(data) {
                         data.forEach(function(message) {

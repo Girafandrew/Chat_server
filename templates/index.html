@@ -1,72 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chat</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Conecta-se ao servidor de socket
-            var socket = io.connect('http://localhost:5000');
+    <title>Chat - Login</title>
+    <style>
+        body {
+            text-align: center;
+            padding-top: 200px;
+            font-family: Arial, sans-serif;
+        }
 
-            // Função para atualizar as mensagens na página
-            function updateMessages(data) {
-                $('#messages').append('<p>' + data + '</p>');
-            }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
 
-            // Evento para lidar com uma nova mensagem recebida do servidor
-            socket.on('new_message', function(data) {
-                updateMessages(data);
-            });
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+        }
 
-            // Função para enviar a mensagem ao servidor
-            function sendMessage() {
-                var message = $('#message').val();
-                $.ajax({
-                    url: '/send_message',
-                    type: 'POST',
-                    data: { message: message },
-                    success: function() {
-                        $('#message').val('');
-                    }
-                });
-            }
-
-            // Evento para lidar com o envio do formulário de usuário
-            $('#userForm').submit(function(e) {
-                e.preventDefault();
-                var username = $('#username').val();
-                $.ajax({
-                    url: '/',
-                    type: 'POST',
-                    data: { username: username },
-                    success: function() {
-                        $('#userForm').hide();
-                        $('#chatForm').show();
-                    }
-                });
-            });
-
-            // Evento para lidar com o envio do formulário de mensagem
-            $('#chatForm').submit(function(e) {
-                e.preventDefault();
-                sendMessage();
-            });
-        });
-    </script>
+        input[type="submit"] {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Chat</h1>
-    <div id="messages">
-        <!-- As mensagens serão exibidas aqui -->
-    </div>
-    <form id="userForm">
-        <input type="text" id="username" placeholder="Username" required>
-        <input type="submit" value="Enter">
-    </form>
-    <form id="chatForm" style="display: none;">
-        <input type="text" id="message" placeholder="Message" required>
-        <input type="submit" value="Send">
+    <h1>Chat - Login</h1>
+    <form action="http://girafandrew.pythonanywhere.com/" method="POST">
+        <input type="text" name="username" placeholder="Enter your username" required>
+        <br><br>
+        <input type="submit" value="Enter Chat">
     </form>
 </body>
 </html>
