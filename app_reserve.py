@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, make_response
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from datetime import datetime
 import requests
+import multiprocessing
 import os
 
 app = Flask(__name__)
@@ -9,13 +10,10 @@ app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['DEBUG'] = True
 socketio = SocketIO(app, async_mode='eventlet', logger=True, engineio_logger=True)
 
-# URL do servidor reserva
-reserve_server_url = 'http://localhost:5001'
-
 # Lista para armazenar as mensagens do chat
 messages = []
 
-# Rota inicial do chat
+# Rota para adicionar uma mensagem à lista de mensagens
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -30,6 +28,7 @@ def index():
         return render_template('index.html')
     return render_template('chat.html', username=username)
 
+
 # Rota para receber as mensagens do formulário e adicioná-las à lista de mensagens
 @app.route('/send_message', methods=['POST'])
 def send_message():
@@ -43,24 +42,27 @@ def send_message():
     formatted_message = f"{now} - {username}: {message}"
     messages.append(formatted_message)
 
-    # Enviar a mensagem para o servidor reserva, se estiver ativo
-    try:
-        requests.post(f"{reserve_server_url}/add_message", json={'message': formatted_message})
-    except requests.exceptions.RequestException:
-        print("Error: Failed to connect to the reserve server")
-
-    socketio.emit('new_message', formatted_message, namespace='/chat')
-    return ''
-
 # Rota para obter as mensagens atualizadas em formato JSON
 @app.route('/get_messages', methods=['GET'])
 def get_messages():
     return jsonify(messages)
+# Função para verificar se o servidor principal está ativo
+def check_primary_server():
+    while True:
+        try:
+            response = requests.get('http://localhost:5000/')
+            if response.status_code == 200:
+                print('Primary server is active')
+        except requests.exceptions.RequestException:
+            print('Primary server is down')
+            # Iniciar o servidor reserva na mesma porta do servidor principal
+            socketio.run(app, host='0.0.0.0', port=5000)
+            break
 
-# Função para iniciar o servidor web
-def start_server():
-    socketio.run(app, host='0.0.0.0', port=5000)
-
+# Inicia o servidor reserva e verifica o status do servidor principal
 if __name__ == '__main__':
-    # Iniciar o servidor principal
-    start_server()
+    # Iniciar a verificação do servidor principal em segundo plano
+    check_primary_server_process = multiprocessing.Process(target=check_primary_server)
+    check_primary_server_process.start()
+    # Iniciar o servidor reserva
+    socketio.run(app, host='0.0.0.0', port=5001)
