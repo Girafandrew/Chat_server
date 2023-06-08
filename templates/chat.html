@@ -2,60 +2,108 @@
 <html>
 <head>
     <title>Chat</title>
+    <style>
+        body {
+            background: black;
+            color: limegreen;
+            font-family: "Courier New", monospace;
+        }
+        
+        #chat_container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        #chat_messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid limegreen;
+            padding: 10px;
+            background: black;
+        }
+        
+        #chat_messages p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        #chat_form input[type="text"] {
+            width: 70%;
+            padding: 5px;
+            font-size: 14px;
+            background: black;
+            border: 1px solid limegreen;
+            color: limegreen;
+        }
+        
+        #chat_form button {
+            padding: 5px 10px;
+            font-size: 14px;
+            background: black;
+            color: limegreen;
+            border: 1px solid limegreen;
+            cursor: pointer;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function(){
-            // Conectar ao servidor SocketIO
             var socket = io.connect('http://' + document.domain + ':' + location.port);
+            var $chatContainer = $('#chat_container');
+            var $chatMessages = $('#chat_messages');
+            var $messageInput = $('#message');
+            var $usernameInput = $('#username');
 
-            // Evento para receber uma nova mensagem do servidor
             socket.on('new_message', function(message){
-                $('#chat_messages').append('<p>' + message + '</p>');
+                $chatMessages.append('<p>' + message + '</p>');
+                $chatMessages.scrollTop($chatMessages[0].scrollHeight);
             });
 
-            // Enviar mensagem para o servidor
             $('form#chat_form').submit(function(event){
                 event.preventDefault();
-                var message = $('#message').val();
-                var username = $('#username').val();
-                $.ajax({
-                    url: '/send_message',
-                    type: 'POST',
-                    data: {message: message, username: username},
-                    success: function(){
-                        $('#message').val('');
-                    }
-                });
+                var message = $messageInput.val();
+                var username = $usernameInput.val();
+                if (message.trim() !== '') {
+                    $.ajax({
+                        url: '/send_message',
+                        type: 'POST',
+                        data: {message: message, username: username},
+                        success: function(){
+                            $messageInput.val('');
+                        }
+                    });
+                }
             });
 
-            // Função para atualizar as mensagens exibidas na página
             function updateMessages(){
                 $.ajax({
                     url: '/get_messages',
                     type: 'GET',
                     dataType: 'json',
                     success: function(data){
-                        $('#chat_messages').empty();
+                        $chatMessages.empty();
                         $.each(data, function(index, message){
-                            $('#chat_messages').append('<p>' + message + '</p>');
+                            $chatMessages.append('<p>' + message + '</p>');
                         });
+                        $chatMessages.scrollTop($chatMessages[0].scrollHeight);
                     }
                 });
             }
 
-            // Atualizar as mensagens a cada 3 segundos
             setInterval(updateMessages, 3000);
         });
     </script>
 </head>
 <body>
-    <h1>Chat</h1>
-    <div id="chat_messages"></div>
-    <form id="chat_form">
-        <input type="hidden" id="username" value="{{ username }}">
-        <input type="text" id="message" required>
-        <button type="submit">Send</button>
-    </form>
+    <div id="chat_container">
+        <h1>Matrix Chat</h1>
+        <div id="chat_messages"></div>
+        <form id="chat_form">
+            <input type="text" id="message" placeholder="Digite sua mensagem" required>
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
 </body>
 </html>
